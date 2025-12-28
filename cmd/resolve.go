@@ -88,7 +88,7 @@ func runResolve(cmd *cobra.Command, args []string) error {
 
 	threads, err := client.GetReviewThreads(prRef.Owner, prRef.Repo, prRef.Number)
 	if err != nil {
-		return fmt.Errorf("failed to get review threads: %w", err)
+		return fmt.Errorf("get review threads: %w", err)
 	}
 
 	commentToThread := make(map[int64]string)

@@ -110,13 +110,13 @@ func getReplyBody() (string, error) {
 
 	stat, err := os.Stdin.Stat()
 	if err != nil {
-		return "", fmt.Errorf("failed to check stdin: %w", err)
+		return "", fmt.Errorf("check stdin: %w", err)
 	}
 
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
 		data, err := io.ReadAll(os.Stdin)
 		if err != nil {
-			return "", fmt.Errorf("failed to read from stdin: %w", err)
+			return "", fmt.Errorf("read from stdin: %w", err)
 		}
 		body := strings.TrimSpace(string(data))
 		if body != "" {

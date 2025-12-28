@@ -24,11 +24,11 @@ type Client struct {
 func NewClient() (*Client, error) {
 	restClient, err := api.DefaultRESTClient()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create REST client: %w", err)
+		return nil, fmt.Errorf("create REST client: %w", err)
 	}
 	graphqlClient, err := api.DefaultGraphQLClient()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create GraphQL client: %w", err)
+		return nil, fmt.Errorf("create GraphQL client: %w", err)
 	}
 	return &Client{rest: restClient, graphql: graphqlClient}, nil
 }
@@ -71,7 +71,7 @@ func (c *Client) GetPullRequest(owner, repo string, number int) (*PullRequest, e
 	var pr PullRequest
 	path := fmt.Sprintf("repos/%s/%s/pulls/%d", owner, repo, number)
 	if err := c.rest.Get(path, &pr); err != nil {
-		return nil, fmt.Errorf("failed to get pull request: %w", err)
+		return nil, fmt.Errorf("get pull request: %w", err)
 	}
 	return &pr, nil
 }
@@ -80,7 +80,7 @@ func (c *Client) GetReviews(owner, repo string, number int) ([]Review, error) {
 	var reviews []Review
 	path := fmt.Sprintf("repos/%s/%s/pulls/%d/reviews", owner, repo, number)
 	if err := c.rest.Get(path, &reviews); err != nil {
-		return nil, fmt.Errorf("failed to get reviews: %w", err)
+		return nil, fmt.Errorf("get reviews: %w", err)
 	}
 	return reviews, nil
 }
@@ -94,7 +94,7 @@ func (c *Client) GetReviewComments(owner, repo string, number int) ([]ReviewComm
 		var comments []ReviewComment
 		path := fmt.Sprintf("repos/%s/%s/pulls/%d/comments?per_page=%d&page=%d", owner, repo, number, perPage, page)
 		if err := c.rest.Get(path, &comments); err != nil {
-			return nil, fmt.Errorf("failed to get review comments: %w", err)
+			return nil, fmt.Errorf("get review comments: %w", err)
 		}
 
 		allComments = append(allComments, comments...)
@@ -107,7 +107,7 @@ func (c *Client) GetReviewComments(owner, repo string, number int) ([]ReviewComm
 
 	resolvedMap, err := c.getResolvedStatus(owner, repo, number)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: failed to fetch resolved status: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Warning: fetch resolved status: %v\n", err)
 	} else {
 		for i := range allComments {
 			if resolved, ok := resolvedMap[allComments[i].ID]; ok {
@@ -250,7 +250,7 @@ func (c *Client) setThreadResolved(threadID string, resolve bool) error {
 			},
 		}
 		if err := c.graphql.Mutate("ResolveReviewThread", &mutation, variables); err != nil {
-			return fmt.Errorf("failed to resolve thread: %w", err)
+			return fmt.Errorf("resolve thread: %w", err)
 		}
 	} else {
 		type UnresolveReviewThreadInput struct {
@@ -269,7 +269,7 @@ func (c *Client) setThreadResolved(threadID string, resolve bool) error {
 			},
 		}
 		if err := c.graphql.Mutate("UnresolveReviewThread", &mutation, variables); err != nil {
-			return fmt.Errorf("failed to unresolve thread: %w", err)
+			return fmt.Errorf("unresolve thread: %w", err)
 		}
 	}
 
@@ -293,7 +293,7 @@ func (c *Client) GetIssueComments(owner, repo string, number int) ([]IssueCommen
 		var comments []IssueComment
 		path := fmt.Sprintf("repos/%s/%s/issues/%d/comments?per_page=%d&page=%d", owner, repo, number, perPage, page)
 		if err := c.rest.Get(path, &comments); err != nil {
-			return nil, fmt.Errorf("failed to get issue comments: %w", err)
+			return nil, fmt.Errorf("get issue comments: %w", err)
 		}
 
 		allComments = append(allComments, comments...)
@@ -313,10 +313,10 @@ func (c *Client) ReplyToReviewComment(owner, repo string, prNumber int, commentI
 	payload := map[string]string{"body": body}
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
-		return nil, fmt.Errorf("failed to encode request body: %w", err)
+		return nil, fmt.Errorf("encode request body: %w", err)
 	}
 	if err := c.rest.Post(path, bytes.NewBuffer(jsonData), &reply); err != nil {
-		return nil, fmt.Errorf("failed to reply to comment: %w", err)
+		return nil, fmt.Errorf("reply to comment: %w", err)
 	}
 	return &reply, nil
 }
@@ -347,7 +347,7 @@ func GetCurrentBranch() (string, error) {
 	cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
 	output, err := cmd.Output()
 	if err != nil {
-		return "", fmt.Errorf("failed to get current branch: %w", err)
+		return "", fmt.Errorf("get current branch: %w", err)
 	}
 	return strings.TrimSpace(string(output)), nil
 }
@@ -365,7 +365,7 @@ func (c *Client) FindPRForBranch(owner, repo, branch string) (*PRReference, erro
 	var prs []PRSearchResult
 	path := fmt.Sprintf("repos/%s/%s/pulls?head=%s:%s&state=all", owner, repo, url.QueryEscape(owner), url.QueryEscape(branch))
 	if err := c.rest.Get(path, &prs); err != nil {
-		return nil, fmt.Errorf("failed to search PRs: %w", err)
+		return nil, fmt.Errorf("search PRs: %w", err)
 	}
 
 	if len(prs) == 0 {
@@ -431,7 +431,7 @@ func (c *Client) MinimizeComment(nodeID string, classifier CommentClassifier) er
 	}
 
 	if err := c.graphql.Mutate("MinimizeComment", &mutation, variables); err != nil {
-		return fmt.Errorf("failed to minimize comment: %w", err)
+		return fmt.Errorf("minimize comment: %w", err)
 	}
 
 	return nil
@@ -457,7 +457,7 @@ func (c *Client) UnminimizeComment(nodeID string) error {
 	}
 
 	if err := c.graphql.Mutate("UnminimizeComment", &mutation, variables); err != nil {
-		return fmt.Errorf("failed to unminimize comment: %w", err)
+		return fmt.Errorf("unminimize comment: %w", err)
 	}
 
 	return nil
