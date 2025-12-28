@@ -267,6 +267,19 @@ func findCommentNodeID(client *github.Client, prRef *github.PRReference, comment
 	return "", "", "", fmt.Errorf("comment with ID %d not found in PR %d", commentID, prRef.Number)
 }
 
+func getActionDisplayString(action string) string {
+	switch action {
+	case "unhide":
+		return "Unhidden"
+	case "would_hide":
+		return "Would hide"
+	case "would_unhide":
+		return "Would unhide"
+	default:
+		return "Hidden"
+	}
+}
+
 func outputResult(result hideResult) error {
 	if hideJsonOutput {
 		enc := json.NewEncoder(os.Stdout)
@@ -275,15 +288,7 @@ func outputResult(result hideResult) error {
 	}
 
 	if result.Success {
-		action := "Hidden"
-		if result.Action == "unhide" {
-			action = "Unhidden"
-		} else if result.Action == "would_hide" {
-			action = "Would hide"
-		} else if result.Action == "would_unhide" {
-			action = "Would unhide"
-		}
-		fmt.Printf("%s comment %d (%s by %s)\n", action, result.ID, result.Type, result.Author)
+		fmt.Printf("%s comment %d (%s by %s)\n", getActionDisplayString(result.Action), result.ID, result.Type, result.Author)
 	} else {
 		fmt.Printf("Failed to process comment %d: %s\n", result.ID, result.Error)
 	}
@@ -303,15 +308,7 @@ func outputResults(results []hideResult) error {
 	for _, r := range results {
 		if r.Success {
 			successCount++
-			action := "Hidden"
-			if r.Action == "unhide" {
-				action = "Unhidden"
-			} else if r.Action == "would_hide" {
-				action = "Would hide"
-			} else if r.Action == "would_unhide" {
-				action = "Would unhide"
-			}
-			fmt.Printf("%s comment %d (%s by %s)\n", action, r.ID, r.Type, r.Author)
+			fmt.Printf("%s comment %d (%s by %s)\n", getActionDisplayString(r.Action), r.ID, r.Type, r.Author)
 		} else {
 			failCount++
 			fmt.Printf("Failed: comment %d - %s\n", r.ID, r.Error)
