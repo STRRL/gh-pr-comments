@@ -86,24 +86,37 @@ func (c *Client) GetReviews(owner, repo string, number int) ([]Review, error) {
 }
 
 func (c *Client) GetReviewComments(owner, repo string, number int) ([]ReviewComment, error) {
-	var comments []ReviewComment
-	path := fmt.Sprintf("repos/%s/%s/pulls/%d/comments", owner, repo, number)
-	if err := c.rest.Get(path, &comments); err != nil {
-		return nil, fmt.Errorf("failed to get review comments: %w", err)
+	var allComments []ReviewComment
+	page := 1
+	perPage := 100
+
+	for {
+		var comments []ReviewComment
+		path := fmt.Sprintf("repos/%s/%s/pulls/%d/comments?per_page=%d&page=%d", owner, repo, number, perPage, page)
+		if err := c.rest.Get(path, &comments); err != nil {
+			return nil, fmt.Errorf("failed to get review comments: %w", err)
+		}
+
+		allComments = append(allComments, comments...)
+
+		if len(comments) < perPage {
+			break
+		}
+		page++
 	}
 
 	resolvedMap, err := c.getResolvedStatus(owner, repo, number)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: failed to fetch resolved status: %v\n", err)
 	} else {
-		for i := range comments {
-			if resolved, ok := resolvedMap[comments[i].ID]; ok {
-				comments[i].IsResolved = resolved
+		for i := range allComments {
+			if resolved, ok := resolvedMap[allComments[i].ID]; ok {
+				allComments[i].IsResolved = resolved
 			}
 		}
 	}
 
-	return comments, nil
+	return allComments, nil
 }
 
 func (c *Client) getResolvedStatus(owner, repo string, number int) (map[int64]bool, error) {
@@ -149,12 +162,26 @@ func (c *Client) getResolvedStatus(owner, repo string, number int) (map[int64]bo
 }
 
 func (c *Client) GetIssueComments(owner, repo string, number int) ([]IssueComment, error) {
-	var comments []IssueComment
-	path := fmt.Sprintf("repos/%s/%s/issues/%d/comments", owner, repo, number)
-	if err := c.rest.Get(path, &comments); err != nil {
-		return nil, fmt.Errorf("failed to get issue comments: %w", err)
+	var allComments []IssueComment
+	page := 1
+	perPage := 100
+
+	for {
+		var comments []IssueComment
+		path := fmt.Sprintf("repos/%s/%s/issues/%d/comments?per_page=%d&page=%d", owner, repo, number, perPage, page)
+		if err := c.rest.Get(path, &comments); err != nil {
+			return nil, fmt.Errorf("failed to get issue comments: %w", err)
+		}
+
+		allComments = append(allComments, comments...)
+
+		if len(comments) < perPage {
+			break
+		}
+		page++
 	}
-	return comments, nil
+
+	return allComments, nil
 }
 
 func (c *Client) ReplyToReviewComment(owner, repo string, prNumber int, commentID int64, body string) (*ReviewComment, error) {
