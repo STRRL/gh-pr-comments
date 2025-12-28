@@ -209,17 +209,10 @@ func (c *Client) GetReviewThreads(owner, repo string, number int) ([]ReviewThrea
 }
 
 func (c *Client) setThreadResolved(threadID string, resolve bool) error {
-	type ThreadInput struct {
-		ThreadID graphql.ID `json:"threadId"`
-	}
-
-	variables := map[string]interface{}{
-		"input": ThreadInput{
-			ThreadID: graphql.ID(threadID),
-		},
-	}
-
 	if resolve {
+		type ResolveReviewThreadInput struct {
+			ThreadID graphql.ID `json:"threadId"`
+		}
 		var mutation struct {
 			ResolveReviewThread struct {
 				Thread struct {
@@ -227,16 +220,29 @@ func (c *Client) setThreadResolved(threadID string, resolve bool) error {
 				}
 			} `graphql:"resolveReviewThread(input: $input)"`
 		}
+		variables := map[string]interface{}{
+			"input": ResolveReviewThreadInput{
+				ThreadID: graphql.ID(threadID),
+			},
+		}
 		if err := c.graphql.Mutate("ResolveReviewThread", &mutation, variables); err != nil {
 			return fmt.Errorf("failed to resolve thread: %w", err)
 		}
 	} else {
+		type UnresolveReviewThreadInput struct {
+			ThreadID graphql.ID `json:"threadId"`
+		}
 		var mutation struct {
 			UnresolveReviewThread struct {
 				Thread struct {
 					IsResolved bool
 				}
 			} `graphql:"unresolveReviewThread(input: $input)"`
+		}
+		variables := map[string]interface{}{
+			"input": UnresolveReviewThreadInput{
+				ThreadID: graphql.ID(threadID),
+			},
 		}
 		if err := c.graphql.Mutate("UnresolveReviewThread", &mutation, variables); err != nil {
 			return fmt.Errorf("failed to unresolve thread: %w", err)
