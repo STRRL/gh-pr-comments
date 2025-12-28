@@ -86,63 +86,87 @@ func (c *Client) GetReviews(owner, repo string, number int) ([]Review, error) {
 }
 
 func (c *Client) GetReviewComments(owner, repo string, number int) ([]ReviewComment, error) {
-	var comments []ReviewComment
-	path := fmt.Sprintf("repos/%s/%s/pulls/%d/comments", owner, repo, number)
-	if err := c.rest.Get(path, &comments); err != nil {
-		return nil, fmt.Errorf("failed to get review comments: %w", err)
+	var allComments []ReviewComment
+	page := 1
+	perPage := 100
+
+	for {
+		var comments []ReviewComment
+		path := fmt.Sprintf("repos/%s/%s/pulls/%d/comments?per_page=%d&page=%d", owner, repo, number, perPage, page)
+		if err := c.rest.Get(path, &comments); err != nil {
+			return nil, fmt.Errorf("failed to get review comments: %w", err)
+		}
+
+		allComments = append(allComments, comments...)
+
+		if len(comments) < perPage {
+			break
+		}
+		page++
 	}
 
 	resolvedMap, err := c.getResolvedStatus(owner, repo, number)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: failed to fetch resolved status: %v\n", err)
 	} else {
-		for i := range comments {
-			if resolved, ok := resolvedMap[comments[i].ID]; ok {
-				comments[i].IsResolved = resolved
+		for i := range allComments {
+			if resolved, ok := resolvedMap[allComments[i].ID]; ok {
+				allComments[i].IsResolved = resolved
 			}
 		}
 	}
 
-	return comments, nil
+	return allComments, nil
 }
 
 func (c *Client) getResolvedStatus(owner, repo string, number int) (map[int64]bool, error) {
-	var query struct {
-		Repository struct {
-			PullRequest struct {
-				ReviewThreads struct {
-					PageInfo struct {
-						HasNextPage bool
-						EndCursor   string
-					}
-					Nodes []struct {
-						IsResolved bool
-						Comments   struct {
-							Nodes []struct {
-								DatabaseId int64
-							}
-						} `graphql:"comments(first: 100)"`
-					}
-				} `graphql:"reviewThreads(first: 100)"`
-			} `graphql:"pullRequest(number: $number)"`
-		} `graphql:"repository(owner: $owner, name: $repo)"`
-	}
-
-	variables := map[string]interface{}{
-		"owner":  graphql.String(owner),
-		"repo":   graphql.String(repo),
-		"number": graphql.Int(number),
-	}
-
-	if err := c.graphql.Query("GetReviewThreads", &query, variables); err != nil {
-		return nil, err
-	}
-
 	result := make(map[int64]bool)
-	for _, thread := range query.Repository.PullRequest.ReviewThreads.Nodes {
-		for _, comment := range thread.Comments.Nodes {
-			result[comment.DatabaseId] = thread.IsResolved
+	var cursor *graphql.String
+
+	for {
+		var query struct {
+			Repository struct {
+				PullRequest struct {
+					ReviewThreads struct {
+						PageInfo struct {
+							HasNextPage bool
+							EndCursor   string
+						}
+						Nodes []struct {
+							IsResolved bool
+							Comments   struct {
+								Nodes []struct {
+									DatabaseId int64
+								}
+							} `graphql:"comments(first: 100)"`
+						}
+					} `graphql:"reviewThreads(first: 100, after: $cursor)"`
+				} `graphql:"pullRequest(number: $number)"`
+			} `graphql:"repository(owner: $owner, name: $repo)"`
 		}
+
+		variables := map[string]interface{}{
+			"owner":  graphql.String(owner),
+			"repo":   graphql.String(repo),
+			"number": graphql.Int(number),
+			"cursor": cursor,
+		}
+
+		if err := c.graphql.Query("GetReviewThreads", &query, variables); err != nil {
+			return nil, err
+		}
+
+		for _, thread := range query.Repository.PullRequest.ReviewThreads.Nodes {
+			for _, comment := range thread.Comments.Nodes {
+				result[comment.DatabaseId] = thread.IsResolved
+			}
+		}
+
+		if !query.Repository.PullRequest.ReviewThreads.PageInfo.HasNextPage {
+			break
+		}
+		endCursor := graphql.String(query.Repository.PullRequest.ReviewThreads.PageInfo.EndCursor)
+		cursor = &endCursor
 	}
 
 	return result, nil
@@ -289,12 +313,26 @@ func (c *Client) MinimizeComment(nodeID string, classifier string) error {
 }
 
 func (c *Client) GetIssueComments(owner, repo string, number int) ([]IssueComment, error) {
-	var comments []IssueComment
-	path := fmt.Sprintf("repos/%s/%s/issues/%d/comments", owner, repo, number)
-	if err := c.rest.Get(path, &comments); err != nil {
-		return nil, fmt.Errorf("failed to get issue comments: %w", err)
+	var allComments []IssueComment
+	page := 1
+	perPage := 100
+
+	for {
+		var comments []IssueComment
+		path := fmt.Sprintf("repos/%s/%s/issues/%d/comments?per_page=%d&page=%d", owner, repo, number, perPage, page)
+		if err := c.rest.Get(path, &comments); err != nil {
+			return nil, fmt.Errorf("failed to get issue comments: %w", err)
+		}
+
+		allComments = append(allComments, comments...)
+
+		if len(comments) < perPage {
+			break
+		}
+		page++
 	}
-	return comments, nil
+
+	return allComments, nil
 }
 
 func (c *Client) ReplyToReviewComment(owner, repo string, prNumber int, commentID int64, body string) (*ReviewComment, error) {
@@ -397,4 +435,58 @@ func (c *Client) ResolvePRReference(args []string) (*PRReference, error) {
 	}
 
 	return prRef, nil
+}
+
+func (c *Client) MinimizeComment(nodeID string, classifier CommentClassifier) error {
+	var mutation struct {
+		MinimizeComment struct {
+			MinimizedComment struct {
+				IsMinimized bool
+			}
+		} `graphql:"minimizeComment(input: $input)"`
+	}
+
+	type MinimizeCommentInput struct {
+		SubjectID  graphql.ID     `json:"subjectId"`
+		Classifier graphql.String `json:"classifier"`
+	}
+
+	variables := map[string]interface{}{
+		"input": MinimizeCommentInput{
+			SubjectID:  graphql.ID(nodeID),
+			Classifier: graphql.String(classifier),
+		},
+	}
+
+	if err := c.graphql.Mutate("MinimizeComment", &mutation, variables); err != nil {
+		return fmt.Errorf("failed to minimize comment: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Client) UnminimizeComment(nodeID string) error {
+	var mutation struct {
+		UnminimizeComment struct {
+			UnminimizedComment struct {
+				IsMinimized bool
+			}
+		} `graphql:"unminimizeComment(input: $input)"`
+	}
+
+	type UnminimizeCommentInput struct {
+		SubjectID graphql.ID `json:"subjectId"`
+	}
+
+	variables := map[string]interface{}{
+		"input": UnminimizeCommentInput{
+			SubjectID: graphql.ID(nodeID),
+		},
+	}
+
+	if err := c.graphql.Mutate("UnminimizeComment", &mutation, variables); err != nil {
+		return fmt.Errorf("failed to unminimize comment: %w", err)
+	}
+
+	return nil
 }

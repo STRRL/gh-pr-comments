@@ -1,6 +1,40 @@
 package github
 
-import "time"
+import (
+	"fmt"
+	"strings"
+	"time"
+)
+
+type CommentClassifier string
+
+const (
+	ClassifierAbuse     CommentClassifier = "ABUSE"
+	ClassifierDuplicate CommentClassifier = "DUPLICATE"
+	ClassifierOffTopic  CommentClassifier = "OFF_TOPIC"
+	ClassifierOutdated  CommentClassifier = "OUTDATED"
+	ClassifierResolved  CommentClassifier = "RESOLVED"
+	ClassifierSpam      CommentClassifier = "SPAM"
+)
+
+func ParseClassifier(s string) (CommentClassifier, error) {
+	switch strings.ToLower(s) {
+	case "abuse":
+		return ClassifierAbuse, nil
+	case "duplicate":
+		return ClassifierDuplicate, nil
+	case "off-topic", "offtopic":
+		return ClassifierOffTopic, nil
+	case "outdated":
+		return ClassifierOutdated, nil
+	case "resolved":
+		return ClassifierResolved, nil
+	case "spam":
+		return ClassifierSpam, nil
+	default:
+		return "", fmt.Errorf("invalid classifier: %s (valid: abuse, duplicate, off-topic, outdated, resolved, spam)", s)
+	}
+}
 
 type User struct {
 	Login string `json:"login"`
