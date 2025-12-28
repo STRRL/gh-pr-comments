@@ -17,7 +17,7 @@ func completeCommentIDs(cmd *cobra.Command, args []string, toComplete string) ([
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	prRef, err := client.ResolvePRReference(nil)
+	prRef, err := client.ResolvePRReference(args)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
@@ -46,13 +46,12 @@ func completeCommentIDs(cmd *cobra.Command, args []string, toComplete string) ([
 }
 
 func completeReviewCommentIDs(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-
 	client, err := github.NewClient()
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	prRef, err := client.ResolvePRReference(nil)
+	prRef, err := client.ResolvePRReference(args)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
@@ -77,7 +76,7 @@ func completeReviewIDs(cmd *cobra.Command, args []string, toComplete string) ([]
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	prRef, err := client.ResolvePRReference(nil)
+	prRef, err := client.ResolvePRReference(args)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
