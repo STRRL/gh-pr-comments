@@ -18,9 +18,10 @@ var (
 )
 
 var resolveCmd = &cobra.Command{
-	Use:   "resolve <comment-id> [comment-id...]",
-	Short: "Resolve or unresolve review threads",
-	Long: `Mark review comment threads as resolved or unresolve them.
+	Use:               "resolve <comment-id> [comment-id...]",
+	Short:             "Resolve or unresolve review threads",
+	ValidArgsFunction: completeReviewCommentIDs,
+	Long:              `Mark review comment threads as resolved or unresolve them.
 
 The comment-id(s) can be found from the 'list', 'view', or 'tree' command output.
 Each comment belongs to a review thread, and this command resolves/unresolves the

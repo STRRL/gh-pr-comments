@@ -21,9 +21,10 @@ var (
 )
 
 var hideCmd = &cobra.Command{
-	Use:   "hide [comment-id]",
-	Short: "Hide (minimize) PR comments",
-	Long: `Hide PR comments by marking them with a reason.
+	Use:               "hide [comment-id]",
+	Short:             "Hide (minimize) PR comments",
+	ValidArgsFunction: completeCommentIDs,
+	Long:              `Hide PR comments by marking them with a reason.
 
 When a comment ID is provided, hides that specific comment.
 When no ID is provided, uses filters to select comments for batch hiding.
