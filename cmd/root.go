@@ -42,6 +42,18 @@ Unlike the standard gh CLI, this extension provides:
   gh pr-comments view 2621968472
   gh pr-comments show 3581523351
 
+  # Resolve review threads by comment ID
+  gh pr-comments resolve 2621968472
+  gh pr-comments resolve 2621968472 2621968473 2621968474
+  gh pr-comments resolve --undo 2621968472
+  gh pr-comments resolve 2621968472 --pr owner/repo/99
+
+  # Clean up reviews with all comments resolved
+  gh pr-comments cleanup --dry-run
+  gh pr-comments cleanup
+  gh pr-comments cleanup --review-id 3581523351
+  gh pr-comments cleanup https://github.com/owner/repo/pull/123
+
   # Use with explicit PR reference
   gh pr-comments reviews owner/repo/123
   gh pr-comments list https://github.com/owner/repo/pull/123

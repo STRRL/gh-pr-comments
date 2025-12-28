@@ -148,6 +148,146 @@ func (c *Client) getResolvedStatus(owner, repo string, number int) (map[int64]bo
 	return result, nil
 }
 
+func (c *Client) GetReviewThreads(owner, repo string, number int) ([]ReviewThread, error) {
+	var threads []ReviewThread
+	var cursor *graphql.String
+
+	for {
+		var query struct {
+			Repository struct {
+				PullRequest struct {
+					ReviewThreads struct {
+						PageInfo struct {
+							HasNextPage bool
+							EndCursor   string
+						}
+						Nodes []struct {
+							ID         string
+							IsResolved bool
+							Comments   struct {
+								Nodes []struct {
+									DatabaseId int64
+								}
+							} `graphql:"comments(first: 100)"`
+						}
+					} `graphql:"reviewThreads(first: 100, after: $cursor)"`
+				} `graphql:"pullRequest(number: $number)"`
+			} `graphql:"repository(owner: $owner, name: $repo)"`
+		}
+
+		variables := map[string]interface{}{
+			"owner":  graphql.String(owner),
+			"repo":   graphql.String(repo),
+			"number": graphql.Int(number),
+			"cursor": cursor,
+		}
+
+		if err := c.graphql.Query("GetReviewThreadsWithID", &query, variables); err != nil {
+			return nil, err
+		}
+
+		for _, node := range query.Repository.PullRequest.ReviewThreads.Nodes {
+			var commentIDs []int64
+			for _, c := range node.Comments.Nodes {
+				commentIDs = append(commentIDs, c.DatabaseId)
+			}
+			threads = append(threads, ReviewThread{
+				ID:         node.ID,
+				IsResolved: node.IsResolved,
+				CommentIDs: commentIDs,
+			})
+		}
+
+		if !query.Repository.PullRequest.ReviewThreads.PageInfo.HasNextPage {
+			break
+		}
+		endCursor := graphql.String(query.Repository.PullRequest.ReviewThreads.PageInfo.EndCursor)
+		cursor = &endCursor
+	}
+
+	return threads, nil
+}
+
+func (c *Client) setThreadResolved(threadID string, resolve bool) error {
+	if resolve {
+		type ResolveReviewThreadInput struct {
+			ThreadID graphql.ID `json:"threadId"`
+		}
+		var mutation struct {
+			ResolveReviewThread struct {
+				Thread struct {
+					IsResolved bool
+				}
+			} `graphql:"resolveReviewThread(input: $input)"`
+		}
+		variables := map[string]interface{}{
+			"input": ResolveReviewThreadInput{
+				ThreadID: graphql.ID(threadID),
+			},
+		}
+		if err := c.graphql.Mutate("ResolveReviewThread", &mutation, variables); err != nil {
+			return fmt.Errorf("failed to resolve thread: %w", err)
+		}
+	} else {
+		type UnresolveReviewThreadInput struct {
+			ThreadID graphql.ID `json:"threadId"`
+		}
+		var mutation struct {
+			UnresolveReviewThread struct {
+				Thread struct {
+					IsResolved bool
+				}
+			} `graphql:"unresolveReviewThread(input: $input)"`
+		}
+		variables := map[string]interface{}{
+			"input": UnresolveReviewThreadInput{
+				ThreadID: graphql.ID(threadID),
+			},
+		}
+		if err := c.graphql.Mutate("UnresolveReviewThread", &mutation, variables); err != nil {
+			return fmt.Errorf("failed to unresolve thread: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (c *Client) ResolveThread(threadID string) error {
+	return c.setThreadResolved(threadID, true)
+}
+
+func (c *Client) UnresolveThread(threadID string) error {
+	return c.setThreadResolved(threadID, false)
+}
+
+func (c *Client) MinimizeComment(nodeID string, classifier string) error {
+	var mutation struct {
+		MinimizeComment struct {
+			MinimizedComment struct {
+				IsMinimized bool
+			}
+		} `graphql:"minimizeComment(input: $input)"`
+	}
+
+	type MinimizeCommentInput struct {
+		SubjectID  graphql.ID     `json:"subjectId"`
+		Classifier graphql.String `json:"classifier"`
+	}
+
+	variables := map[string]interface{}{
+		"input": MinimizeCommentInput{
+			SubjectID:  graphql.ID(nodeID),
+			Classifier: graphql.String(classifier),
+		},
+	}
+
+	if err := c.graphql.Mutate("MinimizeComment", &mutation, variables); err != nil {
+		return fmt.Errorf("failed to minimize comment: %w", err)
+	}
+
+	return nil
+}
+
 func (c *Client) GetIssueComments(owner, repo string, number int) ([]IssueComment, error) {
 	var comments []IssueComment
 	path := fmt.Sprintf("repos/%s/%s/issues/%d/comments", owner, repo, number)
