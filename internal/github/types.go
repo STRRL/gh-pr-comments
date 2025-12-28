@@ -61,3 +61,9 @@ type PullRequest struct {
 	State  string `json:"state"`
 	User   User   `json:"user"`
 }
+
+type ReviewThread struct {
+	ID         string
+	IsResolved bool
+	CommentIDs []int64
+}
