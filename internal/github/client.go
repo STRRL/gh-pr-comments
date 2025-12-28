@@ -284,34 +284,6 @@ func (c *Client) UnresolveThread(threadID string) error {
 	return c.setThreadResolved(threadID, false)
 }
 
-func (c *Client) MinimizeComment(nodeID string, classifier string) error {
-	var mutation struct {
-		MinimizeComment struct {
-			MinimizedComment struct {
-				IsMinimized bool
-			}
-		} `graphql:"minimizeComment(input: $input)"`
-	}
-
-	type MinimizeCommentInput struct {
-		SubjectID  graphql.ID     `json:"subjectId"`
-		Classifier graphql.String `json:"classifier"`
-	}
-
-	variables := map[string]interface{}{
-		"input": MinimizeCommentInput{
-			SubjectID:  graphql.ID(nodeID),
-			Classifier: graphql.String(classifier),
-		},
-	}
-
-	if err := c.graphql.Mutate("MinimizeComment", &mutation, variables); err != nil {
-		return fmt.Errorf("failed to minimize comment: %w", err)
-	}
-
-	return nil
-}
-
 func (c *Client) GetIssueComments(owner, repo string, number int) ([]IssueComment, error) {
 	var allComments []IssueComment
 	page := 1
