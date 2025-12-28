@@ -41,8 +41,9 @@ Examples:
 
   # Reply with JSON output
   gh pr-comments reply 2621968472 --body "Done" --json`,
-	Args: cobra.ExactArgs(1),
-	RunE: runReply,
+	Args:              cobra.ExactArgs(1),
+	RunE:              runReply,
+	ValidArgsFunction: completeReviewCommentIDs,
 }
 
 func init() {

@@ -195,6 +195,56 @@ A review comment is considered **outdated** when `position` or `line` is `null`,
 
 Resolved status is fetched via the GraphQL API (not available in REST). Comments are grouped by review threads, and a thread's `isResolved` status applies to all comments in that thread. By default, resolved comments are hidden in `list` and `tree` commands.
 
+## Shell Completion
+
+Shell completion is available for bash, zsh, fish, and powershell.
+
+### Zsh
+
+```bash
+# Generate and install completion
+gh pr-comments completion zsh > "${fpath[1]}/_gh-pr-comments"
+
+# Make sure completion is enabled in ~/.zshrc:
+# autoload -U compinit; compinit
+
+# Restart your shell or run:
+source ~/.zshrc
+```
+
+### Bash
+
+```bash
+# For current session
+source <(gh pr-comments completion bash)
+
+# For all sessions (Linux)
+gh pr-comments completion bash > /etc/bash_completion.d/gh-pr-comments
+
+# For all sessions (macOS with Homebrew)
+gh pr-comments completion bash > $(brew --prefix)/etc/bash_completion.d/gh-pr-comments
+```
+
+### Fish
+
+```bash
+gh pr-comments completion fish > ~/.config/fish/completions/gh-pr-comments.fish
+```
+
+### PowerShell
+
+```powershell
+gh pr-comments completion powershell | Out-String | Invoke-Expression
+```
+
+### Features
+
+Completions include:
+- Subcommands and flags
+- Dynamic comment ID suggestions for `view` and `reply` commands (with content previews)
+- Dynamic review ID suggestions for `--review-id` flag
+- Flag value suggestions (e.g., `--type`, `--resolved`, `--outdated`)
+
 ## Development
 
 ```bash

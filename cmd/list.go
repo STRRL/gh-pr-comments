@@ -57,6 +57,17 @@ func init() {
 	listCmd.Flags().StringVar(&listResolved, "resolved", "", "Filter by resolved status (true/false, review comments only)")
 	listCmd.Flags().BoolVar(&listAll, "all", false, "Show all comments including resolved")
 	listCmd.Flags().StringVar(&listCommentType, "type", "", "Filter by comment type (review/issue)")
+
+	listCmd.RegisterFlagCompletionFunc("review-id", completeReviewIDs)
+	listCmd.RegisterFlagCompletionFunc("type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"review\tInline code comments", "issue\tGeneral PR comments"}, cobra.ShellCompDirectiveNoFileComp
+	})
+	listCmd.RegisterFlagCompletionFunc("outdated", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"true\tShow only outdated comments", "false\tShow only non-outdated comments"}, cobra.ShellCompDirectiveNoFileComp
+	})
+	listCmd.RegisterFlagCompletionFunc("resolved", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"true\tShow only resolved comments", "false\tShow only unresolved comments"}, cobra.ShellCompDirectiveNoFileComp
+	})
 }
 
 type unifiedComment struct {
