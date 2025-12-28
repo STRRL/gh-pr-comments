@@ -57,6 +57,7 @@ type ResolveResult struct {
 	ThreadID  string `json:"thread_id"`
 	Action    string `json:"action"`
 	Success   bool   `json:"success"`
+	Skipped   bool   `json:"skipped,omitempty"`
 	Error     string `json:"error,omitempty"`
 }
 
@@ -118,6 +119,13 @@ func runResolve(cmd *cobra.Command, args []string) error {
 		}
 
 		if processedThreads[threadID] {
+			results = append(results, ResolveResult{
+				CommentID: commentID,
+				ThreadID:  threadID,
+				Action:    action,
+				Success:   true,
+				Skipped:   true,
+			})
 			continue
 		}
 		processedThreads[threadID] = true
@@ -153,22 +161,34 @@ func runResolve(cmd *cobra.Command, args []string) error {
 
 func printResolveResults(results []ResolveResult, action string) {
 	successCount := 0
+	skippedCount := 0
 	failCount := 0
 
+	verb := "resolve"
+	if action == "unresolved" {
+		verb = "unresolve"
+	}
+
 	for _, r := range results {
-		if r.Success {
+		if r.Skipped {
+			skippedCount++
+			fmt.Printf("Skipped comment %d (thread already processed)\n", r.CommentID)
+		} else if r.Success {
 			successCount++
 			fmt.Printf("Thread %s for comment %d\n", action, r.CommentID)
 		} else {
 			failCount++
 			fmt.Fprintf(os.Stderr, "Failed to %s thread for comment %d: %s\n",
-				strings.TrimSuffix(action, "d"), r.CommentID, r.Error)
+				verb, r.CommentID, r.Error)
 		}
 	}
 
 	fmt.Println(strings.Repeat("─", 40))
 	if successCount > 0 {
 		fmt.Printf("Done: %d thread(s) %s\n", successCount, action)
+	}
+	if skippedCount > 0 {
+		fmt.Printf("Skipped: %d comment(s) (same thread)\n", skippedCount)
 	}
 	if failCount > 0 {
 		fmt.Printf("Failed: %d thread(s)\n", failCount)

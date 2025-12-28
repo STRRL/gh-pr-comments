@@ -72,8 +72,8 @@ type CleanupOutput struct {
 	PRNumber  int                      `json:"pr_number"`
 	DryRun    bool                     `json:"dry_run"`
 	Minimized []ReviewCleanupCandidate `json:"minimized"`
+	Failed    []ReviewCleanupCandidate `json:"failed,omitempty"`
 	Skipped   []ReviewCleanupCandidate `json:"skipped"`
-	Errors    []string                 `json:"errors,omitempty"`
 }
 
 func runCleanup(cmd *cobra.Command, args []string) error {
@@ -126,14 +126,18 @@ func runCleanup(cmd *cobra.Command, args []string) error {
 	}
 
 	if !cleanupDryRun {
-		for i, c := range output.Minimized {
+		var successful []ReviewCleanupCandidate
+		for _, c := range output.Minimized {
 			err := client.MinimizeComment(c.Review.NodeID, "RESOLVED")
 			if err != nil {
-				output.Errors = append(output.Errors, fmt.Sprintf("review %d: %s", c.Review.ID, err.Error()))
-				output.Minimized[i].CanMinimize = false
-				output.Minimized[i].Reason = err.Error()
+				c.CanMinimize = false
+				c.Reason = err.Error()
+				output.Failed = append(output.Failed, c)
+			} else {
+				successful = append(successful, c)
 			}
 		}
+		output.Minimized = successful
 	}
 
 	if cleanupJsonOutput {
@@ -226,10 +230,16 @@ func printCleanupResults(output CleanupOutput, dryRun bool) {
 		fmt.Println()
 	}
 
-	if len(output.Errors) > 0 {
-		fmt.Fprintln(os.Stderr, "Errors:")
-		for _, e := range output.Errors {
-			fmt.Fprintf(os.Stderr, "  %s\n", e)
+	if len(output.Failed) > 0 {
+		fmt.Fprintln(os.Stderr, "Failed to minimize:")
+		for _, c := range output.Failed {
+			submitted := ""
+			if !c.Review.SubmittedAt.IsZero() {
+				submitted = c.Review.SubmittedAt.Format("2006-01-02")
+			}
+			fmt.Fprintf(os.Stderr, "  Review %d by @%s (%s) - %s\n",
+				c.Review.ID, c.Review.User.Login, c.Review.State, submitted)
+			fmt.Fprintf(os.Stderr, "    Error: %s\n", c.Reason)
 		}
 		fmt.Println()
 	}
@@ -238,12 +248,9 @@ func printCleanupResults(output CleanupOutput, dryRun bool) {
 	if dryRun {
 		fmt.Printf("Total: %d review(s) would be minimized\n", len(output.Minimized))
 	} else {
-		successCount := 0
-		for _, c := range output.Minimized {
-			if c.CanMinimize {
-				successCount++
-			}
+		fmt.Printf("Done: %d review(s) minimized\n", len(output.Minimized))
+		if len(output.Failed) > 0 {
+			fmt.Printf("Failed: %d review(s)\n", len(output.Failed))
 		}
-		fmt.Printf("Done: %d review(s) minimized\n", successCount)
 	}
 }
