@@ -1,6 +1,8 @@
 package github
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -153,6 +155,20 @@ func (c *Client) GetIssueComments(owner, repo string, number int) ([]IssueCommen
 		return nil, fmt.Errorf("failed to get issue comments: %w", err)
 	}
 	return comments, nil
+}
+
+func (c *Client) ReplyToReviewComment(owner, repo string, prNumber int, commentID int64, body string) (*ReviewComment, error) {
+	var reply ReviewComment
+	path := fmt.Sprintf("repos/%s/%s/pulls/%d/comments/%d/replies", owner, repo, prNumber, commentID)
+	payload := map[string]string{"body": body}
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode request body: %w", err)
+	}
+	if err := c.rest.Post(path, bytes.NewBuffer(jsonData), &reply); err != nil {
+		return nil, fmt.Errorf("failed to reply to comment: %w", err)
+	}
+	return &reply, nil
 }
 
 func (pr *PRReference) ResolveOwnerRepo(c *Client) error {
