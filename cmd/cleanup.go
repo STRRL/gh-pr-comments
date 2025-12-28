@@ -57,6 +57,7 @@ func init() {
 	cleanupCmd.Flags().BoolVar(&cleanupDryRun, "dry-run", false, "Preview which reviews would be minimized without making changes")
 	cleanupCmd.Flags().Int64Var(&cleanupReviewID, "review-id", 0, "Only process a specific review ID")
 	cleanupCmd.Flags().BoolVar(&cleanupJsonOutput, "json", false, "Output in JSON format")
+	_ = cleanupCmd.RegisterFlagCompletionFunc("review-id", completeReviewIDs)
 	rootCmd.AddCommand(cleanupCmd)
 }
 
