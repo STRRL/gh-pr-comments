@@ -120,42 +120,53 @@ func (c *Client) GetReviewComments(owner, repo string, number int) ([]ReviewComm
 }
 
 func (c *Client) getResolvedStatus(owner, repo string, number int) (map[int64]bool, error) {
-	var query struct {
-		Repository struct {
-			PullRequest struct {
-				ReviewThreads struct {
-					PageInfo struct {
-						HasNextPage bool
-						EndCursor   string
-					}
-					Nodes []struct {
-						IsResolved bool
-						Comments   struct {
-							Nodes []struct {
-								DatabaseId int64
-							}
-						} `graphql:"comments(first: 100)"`
-					}
-				} `graphql:"reviewThreads(first: 100)"`
-			} `graphql:"pullRequest(number: $number)"`
-		} `graphql:"repository(owner: $owner, name: $repo)"`
-	}
-
-	variables := map[string]interface{}{
-		"owner":  graphql.String(owner),
-		"repo":   graphql.String(repo),
-		"number": graphql.Int(number),
-	}
-
-	if err := c.graphql.Query("GetReviewThreads", &query, variables); err != nil {
-		return nil, err
-	}
-
 	result := make(map[int64]bool)
-	for _, thread := range query.Repository.PullRequest.ReviewThreads.Nodes {
-		for _, comment := range thread.Comments.Nodes {
-			result[comment.DatabaseId] = thread.IsResolved
+	var cursor *graphql.String
+
+	for {
+		var query struct {
+			Repository struct {
+				PullRequest struct {
+					ReviewThreads struct {
+						PageInfo struct {
+							HasNextPage bool
+							EndCursor   string
+						}
+						Nodes []struct {
+							IsResolved bool
+							Comments   struct {
+								Nodes []struct {
+									DatabaseId int64
+								}
+							} `graphql:"comments(first: 100)"`
+						}
+					} `graphql:"reviewThreads(first: 100, after: $cursor)"`
+				} `graphql:"pullRequest(number: $number)"`
+			} `graphql:"repository(owner: $owner, name: $repo)"`
 		}
+
+		variables := map[string]interface{}{
+			"owner":  graphql.String(owner),
+			"repo":   graphql.String(repo),
+			"number": graphql.Int(number),
+			"cursor": cursor,
+		}
+
+		if err := c.graphql.Query("GetReviewThreads", &query, variables); err != nil {
+			return nil, err
+		}
+
+		for _, thread := range query.Repository.PullRequest.ReviewThreads.Nodes {
+			for _, comment := range thread.Comments.Nodes {
+				result[comment.DatabaseId] = thread.IsResolved
+			}
+		}
+
+		if !query.Repository.PullRequest.ReviewThreads.PageInfo.HasNextPage {
+			break
+		}
+		endCursor := graphql.String(query.Repository.PullRequest.ReviewThreads.PageInfo.EndCursor)
+		cursor = &endCursor
 	}
 
 	return result, nil
