@@ -13,9 +13,9 @@ import (
 var viewJsonOutput bool
 
 var viewCmd = &cobra.Command{
-	Use:     "view <id>",
-	Aliases: []string{"show"},
-	Short:   "View full content of a review comment, review, or issue comment",
+	Use:               "view <id>",
+	Aliases:           []string{"show"},
+	Short:             "View full content of a review comment, review, or issue comment",
 	Long: `View the full content of an item by its ID.
 
 Automatically detects the type (review comment, review, or issue comment).
@@ -26,8 +26,9 @@ Examples:
   gh pr-comments view 2621968472
   gh pr-comments show 3581523351
   gh pr-comments view 2621968472 --json`,
-	Args: cobra.ExactArgs(1),
-	RunE: runView,
+	Args:              cobra.ExactArgs(1),
+	RunE:              runView,
+	ValidArgsFunction: completeCommentIDs,
 }
 
 func init() {
