@@ -11,6 +11,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type CleanupInfo struct {
+	ReviewID   int64  `json:"review_id"`
+	ReviewerID string `json:"reviewer"`
+	Minimized  bool   `json:"minimized"`
+	Error      string `json:"error,omitempty"`
+}
+
 var (
 	resolveUndo       bool
 	resolvePR         string
@@ -26,6 +33,9 @@ var resolveCmd = &cobra.Command{
 The comment-id(s) can be found from the 'list', 'view', or 'tree' command output.
 Each comment belongs to a review thread, and this command resolves/unresolves the
 entire thread containing the specified comment.
+
+After resolving, this command automatically minimizes (hides) any reviews where
+all inline comments are now resolved. This helps reduce noise in the PR timeline.
 
 Examples:
   # Resolve a single thread
@@ -150,17 +160,89 @@ func runResolve(cmd *cobra.Command, args []string) error {
 		results = append(results, result)
 	}
 
-	if resolveJsonOutput {
-		enc := json.NewEncoder(os.Stdout)
-		enc.SetIndent("", "  ")
-		return enc.Encode(results)
+	var cleanupResults []CleanupInfo
+	if !resolveUndo {
+		cleanupResults = performAutoCleanup(client, prRef)
 	}
 
-	printResolveResults(results, action)
+	if resolveJsonOutput {
+		output := struct {
+			Results []ResolveResult `json:"results"`
+			Cleanup []CleanupInfo   `json:"cleanup,omitempty"`
+		}{
+			Results: results,
+			Cleanup: cleanupResults,
+		}
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetIndent("", "  ")
+		return enc.Encode(output)
+	}
+
+	printResolveResults(results, action, cleanupResults)
 	return nil
 }
 
-func printResolveResults(results []ResolveResult, action string) {
+func performAutoCleanup(client *github.Client, prRef *github.PRReference) []CleanupInfo {
+	reviews, err := client.GetReviews(prRef.Owner, prRef.Repo, prRef.Number)
+	if err != nil {
+		return nil
+	}
+
+	reviewComments, err := client.GetReviewComments(prRef.Owner, prRef.Repo, prRef.Number)
+	if err != nil {
+		return nil
+	}
+
+	commentsByReview := make(map[int64][]github.ReviewComment)
+	for _, c := range reviewComments {
+		commentsByReview[c.PullRequestReviewID] = append(commentsByReview[c.PullRequestReviewID], c)
+	}
+
+	var cleanupResults []CleanupInfo
+
+	for _, r := range reviews {
+		comments := commentsByReview[r.ID]
+		if len(comments) == 0 {
+			continue
+		}
+
+		allResolved := true
+		for _, c := range comments {
+			if !c.IsResolved {
+				allResolved = false
+				break
+			}
+		}
+
+		if !allResolved {
+			continue
+		}
+
+		reviewerID := "unknown"
+		if r.User.Login != "" {
+			reviewerID = r.User.Login
+		}
+
+		info := CleanupInfo{
+			ReviewID:   r.ID,
+			ReviewerID: reviewerID,
+		}
+
+		err := client.MinimizeComment(r.NodeID, github.ClassifierResolved)
+		if err != nil {
+			info.Minimized = false
+			info.Error = err.Error()
+		} else {
+			info.Minimized = true
+		}
+
+		cleanupResults = append(cleanupResults, info)
+	}
+
+	return cleanupResults
+}
+
+func printResolveResults(results []ResolveResult, action string, cleanupResults []CleanupInfo) {
 	successCount := 0
 	skippedCount := 0
 	failCount := 0
@@ -193,5 +275,22 @@ func printResolveResults(results []ResolveResult, action string) {
 	}
 	if failCount > 0 {
 		fmt.Printf("Failed: %d thread(s)\n", failCount)
+	}
+
+	if len(cleanupResults) > 0 {
+		fmt.Println()
+		fmt.Println("Auto-cleanup:")
+		minimizedCount := 0
+		for _, c := range cleanupResults {
+			if c.Minimized {
+				minimizedCount++
+				fmt.Printf("  Minimized review %d by @%s\n", c.ReviewID, c.ReviewerID)
+			} else {
+				fmt.Fprintf(os.Stderr, "  Failed to minimize review %d: %s\n", c.ReviewID, c.Error)
+			}
+		}
+		if minimizedCount > 0 {
+			fmt.Printf("Cleaned up: %d review(s) minimized\n", minimizedCount)
+		}
 	}
 }
