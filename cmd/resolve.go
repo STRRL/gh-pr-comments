@@ -64,13 +64,12 @@ func init() {
 }
 
 type ResolveResult struct {
-	CommentID int64         `json:"comment_id"`
-	ThreadID  string        `json:"thread_id"`
-	Action    string        `json:"action"`
-	Success   bool          `json:"success"`
-	Skipped   bool          `json:"skipped,omitempty"`
-	Error     string        `json:"error,omitempty"`
-	Cleanup   []CleanupInfo `json:"cleanup,omitempty"`
+	CommentID int64  `json:"comment_id"`
+	ThreadID  string `json:"thread_id"`
+	Action    string `json:"action"`
+	Success   bool   `json:"success"`
+	Skipped   bool   `json:"skipped,omitempty"`
+	Error     string `json:"error,omitempty"`
 }
 
 func runResolve(cmd *cobra.Command, args []string) error {
@@ -219,9 +218,14 @@ func performAutoCleanup(client *github.Client, prRef *github.PRReference) []Clea
 			continue
 		}
 
+		reviewerID := "unknown"
+		if r.User.Login != "" {
+			reviewerID = r.User.Login
+		}
+
 		info := CleanupInfo{
 			ReviewID:   r.ID,
-			ReviewerID: r.User.Login,
+			ReviewerID: reviewerID,
 		}
 
 		err := client.MinimizeComment(r.NodeID, github.ClassifierResolved)

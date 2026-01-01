@@ -129,7 +129,7 @@ func runCleanup(cmd *cobra.Command, args []string) error {
 	if !cleanupDryRun {
 		var successful []ReviewCleanupCandidate
 		for _, c := range output.Minimized {
-			err := client.MinimizeComment(c.Review.NodeID, "RESOLVED")
+			err := client.MinimizeComment(c.Review.NodeID, github.ClassifierResolved)
 			if err != nil {
 				c.CanMinimize = false
 				c.Reason = err.Error()
