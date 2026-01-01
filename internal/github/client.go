@@ -232,56 +232,27 @@ func (c *Client) GetReviewThreads(owner, repo string, number int) ([]ReviewThrea
 	return threads, nil
 }
 
-func (c *Client) setThreadResolved(threadID string, resolve bool) error {
-	if resolve {
-		type ResolveReviewThreadInput struct {
-			ThreadID graphql.ID `json:"threadId"`
-		}
-		var mutation struct {
-			ResolveReviewThread struct {
-				Thread struct {
-					IsResolved bool
-				}
-			} `graphql:"resolveReviewThread(input: $input)"`
-		}
-		variables := map[string]interface{}{
-			"input": ResolveReviewThreadInput{
-				ThreadID: graphql.ID(threadID),
-			},
-		}
-		if err := c.graphql.Mutate("ResolveReviewThread", &mutation, variables); err != nil {
-			return fmt.Errorf("resolve thread: %w", err)
-		}
-	} else {
-		type UnresolveReviewThreadInput struct {
-			ThreadID graphql.ID `json:"threadId"`
-		}
-		var mutation struct {
-			UnresolveReviewThread struct {
-				Thread struct {
-					IsResolved bool
-				}
-			} `graphql:"unresolveReviewThread(input: $input)"`
-		}
-		variables := map[string]interface{}{
-			"input": UnresolveReviewThreadInput{
-				ThreadID: graphql.ID(threadID),
-			},
-		}
-		if err := c.graphql.Mutate("UnresolveReviewThread", &mutation, variables); err != nil {
-			return fmt.Errorf("unresolve thread: %w", err)
-		}
+func (c *Client) ResolveThread(threadID string) error {
+	type ResolveReviewThreadInput struct {
+		ThreadID graphql.ID `json:"threadId"`
+	}
+	var mutation struct {
+		ResolveReviewThread struct {
+			Thread struct {
+				IsResolved bool
+			}
+		} `graphql:"resolveReviewThread(input: $input)"`
+	}
+	variables := map[string]interface{}{
+		"input": ResolveReviewThreadInput{
+			ThreadID: graphql.ID(threadID),
+		},
+	}
+	if err := c.graphql.Mutate("ResolveReviewThread", &mutation, variables); err != nil {
+		return fmt.Errorf("resolve thread: %w", err)
 	}
 
 	return nil
-}
-
-func (c *Client) ResolveThread(threadID string) error {
-	return c.setThreadResolved(threadID, true)
-}
-
-func (c *Client) UnresolveThread(threadID string) error {
-	return c.setThreadResolved(threadID, false)
 }
 
 func (c *Client) GetIssueComments(owner, repo string, number int) ([]IssueComment, error) {
@@ -437,28 +408,3 @@ func (c *Client) MinimizeComment(nodeID string, classifier CommentClassifier) er
 	return nil
 }
 
-func (c *Client) UnminimizeComment(nodeID string) error {
-	var mutation struct {
-		UnminimizeComment struct {
-			UnminimizedComment struct {
-				IsMinimized bool
-			}
-		} `graphql:"unminimizeComment(input: $input)"`
-	}
-
-	type UnminimizeCommentInput struct {
-		SubjectID graphql.ID `json:"subjectId"`
-	}
-
-	variables := map[string]interface{}{
-		"input": UnminimizeCommentInput{
-			SubjectID: graphql.ID(nodeID),
-		},
-	}
-
-	if err := c.graphql.Mutate("UnminimizeComment", &mutation, variables); err != nil {
-		return fmt.Errorf("unminimize comment: %w", err)
-	}
-
-	return nil
-}

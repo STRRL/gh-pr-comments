@@ -45,7 +45,6 @@ Unlike the standard gh CLI, this extension provides:
   # Resolve review threads by comment ID
   gh pr-comments resolve 2621968472
   gh pr-comments resolve 2621968472 2621968473 2621968474
-  gh pr-comments resolve --undo 2621968472
   gh pr-comments resolve 2621968472 --pr owner/repo/99
 
   # Clean up reviews with all comments resolved

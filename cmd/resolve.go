@@ -19,19 +19,18 @@ type CleanupInfo struct {
 }
 
 var (
-	resolveUndo       bool
 	resolvePR         string
 	resolveJsonOutput bool
 )
 
 var resolveCmd = &cobra.Command{
 	Use:               "resolve <comment-id> [comment-id...]",
-	Short:             "Resolve or unresolve review threads",
+	Short:             "Resolve review threads",
 	ValidArgsFunction: completeReviewCommentIDs,
-	Long:              `Mark review comment threads as resolved or unresolve them.
+	Long:              `Mark review comment threads as resolved.
 
 The comment-id(s) can be found from the 'list', 'view', or 'tree' command output.
-Each comment belongs to a review thread, and this command resolves/unresolves the
+Each comment belongs to a review thread, and this command resolves the
 entire thread containing the specified comment.
 
 After resolving, this command automatically minimizes (hides) any reviews where
@@ -44,9 +43,6 @@ Examples:
   # Resolve multiple threads
   gh pr-comments resolve 2621968472 2621968473 2621968474
 
-  # Unresolve a thread
-  gh pr-comments resolve --undo 2621968472
-
   # Specify PR explicitly
   gh pr-comments resolve 2621968472 --pr owner/repo/99
 
@@ -57,7 +53,6 @@ Examples:
 }
 
 func init() {
-	resolveCmd.Flags().BoolVar(&resolveUndo, "undo", false, "Unresolve the thread instead of resolving")
 	resolveCmd.Flags().StringVar(&resolvePR, "pr", "", "PR reference (e.g., owner/repo/123 or just 123)")
 	resolveCmd.Flags().BoolVar(&resolveJsonOutput, "json", false, "Output in JSON format")
 	rootCmd.AddCommand(resolveCmd)
@@ -110,9 +105,6 @@ func runResolve(cmd *cobra.Command, args []string) error {
 	}
 
 	action := "resolved"
-	if resolveUndo {
-		action = "unresolved"
-	}
 
 	var results []ResolveResult
 	processedThreads := make(map[string]bool)
@@ -141,12 +133,7 @@ func runResolve(cmd *cobra.Command, args []string) error {
 		}
 		processedThreads[threadID] = true
 
-		var err error
-		if resolveUndo {
-			err = client.UnresolveThread(threadID)
-		} else {
-			err = client.ResolveThread(threadID)
-		}
+		err := client.ResolveThread(threadID)
 
 		result := ResolveResult{
 			CommentID: commentID,
@@ -247,11 +234,6 @@ func printResolveResults(results []ResolveResult, action string, cleanupResults 
 	skippedCount := 0
 	failCount := 0
 
-	verb := "resolve"
-	if action == "unresolved" {
-		verb = "unresolve"
-	}
-
 	for _, r := range results {
 		if r.Skipped {
 			skippedCount++
@@ -261,8 +243,8 @@ func printResolveResults(results []ResolveResult, action string, cleanupResults 
 			fmt.Printf("Thread %s for comment %d\n", action, r.CommentID)
 		} else {
 			failCount++
-			fmt.Fprintf(os.Stderr, "Failed to %s thread for comment %d: %s\n",
-				verb, r.CommentID, r.Error)
+			fmt.Fprintf(os.Stderr, "Failed to resolve thread for comment %d: %s\n",
+				r.CommentID, r.Error)
 		}
 	}
 
