@@ -13,7 +13,6 @@ import (
 
 var (
 	hideReason     string
-	hideUndo       bool
 	hideAuthor     string
 	hidePR         string
 	hideJsonOutput bool
@@ -47,9 +46,6 @@ Examples:
   # Hide all comments by a specific author
   gh pr-comments hide --author "claude[bot]" --reason outdated
 
-  # Unhide a comment
-  gh pr-comments hide 2621968472 --undo
-
   # Dry run to see what would be hidden
   gh pr-comments hide --author "bot" --dry-run`,
 	Args: cobra.MaximumNArgs(1),
@@ -59,8 +55,6 @@ Examples:
 func init() {
 	hideCmd.Flags().StringVar(&hideReason, "reason", "resolved",
 		"Reason for hiding (abuse, duplicate, off-topic, outdated, resolved, spam)")
-	hideCmd.Flags().BoolVar(&hideUndo, "undo", false,
-		"Unhide the comment instead")
 	hideCmd.Flags().StringVar(&hideAuthor, "author", "",
 		"Filter by comment author for batch operations")
 	hideCmd.Flags().StringVar(&hidePR, "pr", "",
@@ -99,12 +93,9 @@ func runHide(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("could not determine PR: %w\nPlease specify a PR with --pr or run from a branch with an associated PR", err)
 	}
 
-	var classifier github.CommentClassifier
-	if !hideUndo {
-		classifier, err = github.ParseClassifier(hideReason)
-		if err != nil {
-			return err
-		}
+	classifier, err := github.ParseClassifier(hideReason)
+	if err != nil {
+		return err
 	}
 
 	if len(args) > 0 {
@@ -138,20 +129,12 @@ func hideSingleComment(client *github.Client, prRef *github.PRReference, comment
 
 	if hideDryRun {
 		result.Action = "would_hide"
-		if hideUndo {
-			result.Action = "would_unhide"
-		}
 		result.Success = true
 		return outputResult(result)
 	}
 
-	if hideUndo {
-		err = client.UnminimizeComment(nodeID)
-		result.Action = "unhide"
-	} else {
-		err = client.MinimizeComment(nodeID, classifier)
-		result.Action = "hide"
-	}
+	err = client.MinimizeComment(nodeID, classifier)
+	result.Action = "hide"
 
 	if err != nil {
 		result.Success = false
@@ -213,22 +196,13 @@ func hideBatch(client *github.Client, prRef *github.PRReference, classifier gith
 
 		if hideDryRun {
 			result.Action = "would_hide"
-			if hideUndo {
-				result.Action = "would_unhide"
-			}
 			result.Success = true
 			results = append(results, result)
 			continue
 		}
 
-		var opErr error
-		if hideUndo {
-			opErr = client.UnminimizeComment(t.NodeID)
-			result.Action = "unhide"
-		} else {
-			opErr = client.MinimizeComment(t.NodeID, classifier)
-			result.Action = "hide"
-		}
+		opErr := client.MinimizeComment(t.NodeID, classifier)
+		result.Action = "hide"
 
 		if opErr != nil {
 			result.Success = false
@@ -270,12 +244,8 @@ func findCommentNodeID(client *github.Client, prRef *github.PRReference, comment
 
 func getActionDisplayString(action string) string {
 	switch action {
-	case "unhide":
-		return "Unhidden"
 	case "would_hide":
 		return "Would hide"
-	case "would_unhide":
-		return "Would unhide"
 	default:
 		return "Hidden"
 	}
