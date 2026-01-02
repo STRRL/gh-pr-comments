@@ -265,7 +265,7 @@ This project includes a Claude Code plugin for AI-assisted PR review comment han
 ### Installation
 
 ```bash
-claude --add-plugin /path/to/gh-pr-comments
+claude --add-plugin https://github.com/STRRL/gh-pr-comments
 ```
 
 ### Usage
