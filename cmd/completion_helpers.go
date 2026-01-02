@@ -28,7 +28,7 @@ func completeCommentIDs(cmd *cobra.Command, args []string, toComplete string) ([
 	if err == nil {
 		for _, c := range reviewComments {
 			desc := github.TruncateString(c.Body, 40)
-			completion := fmt.Sprintf("%d\t[review] %s", c.ID, desc)
+			completion := fmt.Sprintf("%d\t[review_comment] %s", c.ID, desc)
 			completions = append(completions, completion)
 		}
 	}
@@ -37,7 +37,7 @@ func completeCommentIDs(cmd *cobra.Command, args []string, toComplete string) ([
 	if err == nil {
 		for _, c := range issueComments {
 			desc := github.TruncateString(c.Body, 40)
-			completion := fmt.Sprintf("%d\t[issue] %s", c.ID, desc)
+			completion := fmt.Sprintf("%d\t[issue_comment] %s", c.ID, desc)
 			completions = append(completions, completion)
 		}
 	}

@@ -12,14 +12,15 @@ This skill helps you work with GitHub PR review comments using the `gh-pr-commen
 
 There are two types of comments on a PR:
 
-1. **Review Comments** (inline): Attached to specific lines of code
+1. **review_comment** (inline): Attached to specific lines of code
    - Have a file path and line number
    - Can be marked as resolved
    - May be "outdated" if the code has changed
 
-2. **Issue Comments** (general): Not attached to code
+2. **issue_comment** (general): Not attached to code
    - Appear in the PR conversation
    - Cannot be resolved (only hidden)
+   - **IMPORTANT**: Some reviewers (like Claude Code) post review feedback as issue comments. These should be treated the same as review comments - analyze the feedback, make changes, and reply accordingly.
 
 ## Available Commands
 
@@ -51,15 +52,20 @@ gh pr-comments cleanup
 
 ## Workflow for Addressing Comments
 
-1. **List**: Start with `gh pr-comments list --json` to see all unresolved comments
-2. **Understand**: Use `gh pr-comments view <id>` to see full context including diff
-3. **Ask User**: Use `AskUserQuestion` to let the user choose how to handle each comment:
-   - **Fix it now** - Make code changes, reply, and resolve
-   - **Fix it later** - Create a GitHub issue to track, reply with link, optionally resolve
-   - **No changes needed** - Reply explaining why, then resolve
-4. **Execute**: Based on user choice, take the appropriate action
-5. **Reply**: **IMPORTANT** - Always reply before resolving. Explain what was done or why no changes were made
-6. **Resolve**: Use `gh pr-comments resolve <id>` to mark as resolved
+1. **List**: Start with `gh pr-comments list --json` to see all comments (both review_comment and issue_comment types)
+2. **Identify actionable feedback**:
+   - For `review_comment`: These are always actionable code review feedback
+   - For `issue_comment`: Check if the content contains review feedback or suggestions that require code changes. Reviewers like Claude Code often post detailed reviews as issue comments.
+3. **Understand**: Use `gh pr-comments view <id>` to see full context including diff (for review_comment) or full message (for issue_comment)
+4. **Ask User**: Use `AskUserQuestion` to let the user choose how to handle each actionable comment:
+   - **Fix it now** - Make code changes, reply, and resolve/hide
+   - **Fix it later** - Create a GitHub issue to track, reply with link, optionally resolve/hide
+   - **No changes needed** - Reply explaining why, then resolve/hide
+5. **Execute**: Based on user choice, take the appropriate action
+6. **Reply**: **IMPORTANT** - Always reply before resolving/hiding. Explain what was done or why no changes were made
+7. **Resolve/Hide**:
+   - For `review_comment`: Use `gh pr-comments resolve <id>` to mark as resolved
+   - For `issue_comment`: Use `gh pr-comments hide <id> --reason resolved` to minimize (issue comments cannot be resolved)
 
 ### Handling "Fix it now"
 
