@@ -269,10 +269,14 @@ This project includes a Claude Code plugin for AI-assisted PR review comment han
 gh extension install STRRL/gh-pr-comments --force
 ```
 
-Then, inside Claude Code, install the plugin:
+Then, install the Claude Code plugin:
 
-```
-/plugin install STRRL/gh-pr-comments
+```bash
+# Step 2: Add the marketplace
+claude plugin marketplace add STRRL/gh-pr-comments
+
+# Step 3: Install the plugin
+claude plugin install gh-pr-comments
 ```
 
 ### Usage
