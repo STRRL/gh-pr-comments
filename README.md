@@ -258,6 +258,27 @@ gh extension install .
 gh pr-comments reviews owner/repo/123
 ```
 
+## Claude Code Plugin
+
+This project includes a Claude Code plugin for AI-assisted PR review comment handling.
+
+### Installation
+
+```bash
+claude --add-plugin /path/to/gh-pr-comments
+```
+
+### Usage
+
+Use the `/gh-pr-comments:address-comments` slash command to:
+
+1. List all unresolved PR comments
+2. Get AI analysis and suggested fixes for each comment
+3. Apply fixes with your confirmation
+4. Mark comments as resolved
+
+The plugin also includes a skill that automatically activates when you discuss PR reviews or code review feedback.
+
 ## License
 
 MIT

@@ -1,0 +1,10 @@
+{
+  "name": "gh-pr-comments",
+  "description": "Address GitHub PR review comments with AI assistance",
+  "version": "1.0.0",
+  "author": {
+    "name": "STRRL"
+  },
+  "repository": "https://github.com/STRRL/gh-pr-comments",
+  "license": "MIT"
+}

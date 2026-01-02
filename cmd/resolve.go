@@ -147,10 +147,7 @@ func runResolve(cmd *cobra.Command, args []string) error {
 		results = append(results, result)
 	}
 
-	var cleanupResults []CleanupInfo
-	if !resolveUndo {
-		cleanupResults = performAutoCleanup(client, prRef)
-	}
+	cleanupResults := performAutoCleanup(client, prRef)
 
 	if resolveJsonOutput {
 		output := struct {
