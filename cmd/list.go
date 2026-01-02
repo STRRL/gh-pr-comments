@@ -39,8 +39,8 @@ PR reference can be:
 Examples:
   gh pr-comments list
   gh pr-comments list --all
-  gh pr-comments list --type=review
-  gh pr-comments list --type=issue
+  gh pr-comments list --type=review_comment
+  gh pr-comments list --type=issue_comment
   gh pr-comments list --resolved=true
   gh pr-comments list https://github.com/owner/repo/pull/123
   gh pr-comments list owner/repo/123 --review-id=3581523351
@@ -56,11 +56,11 @@ func init() {
 	listCmd.Flags().StringVar(&listOutdated, "outdated", "", "Filter by outdated status (true/false, review comments only)")
 	listCmd.Flags().StringVar(&listResolved, "resolved", "", "Filter by resolved status (true/false, review comments only)")
 	listCmd.Flags().BoolVar(&listAll, "all", false, "Show all comments including resolved")
-	listCmd.Flags().StringVar(&listCommentType, "type", "", "Filter by comment type (review/issue)")
+	listCmd.Flags().StringVar(&listCommentType, "type", "", "Filter by comment type (review_comment/issue_comment)")
 
 	listCmd.RegisterFlagCompletionFunc("review-id", completeReviewIDs)
 	listCmd.RegisterFlagCompletionFunc("type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"review\tInline code comments", "issue\tGeneral PR comments"}, cobra.ShellCompDirectiveNoFileComp
+		return []string{"review_comment\tInline code comments", "issue_comment\tGeneral PR comments"}, cobra.ShellCompDirectiveNoFileComp
 	})
 	listCmd.RegisterFlagCompletionFunc("outdated", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"true\tShow only outdated comments", "false\tShow only non-outdated comments"}, cobra.ShellCompDirectiveNoFileComp
@@ -96,7 +96,7 @@ func runList(cmd *cobra.Command, args []string) error {
 
 	var allComments []unifiedComment
 
-	if listCommentType == "" || listCommentType == "review" {
+	if listCommentType == "" || listCommentType == "review_comment" {
 		reviewComments, err := client.GetReviewComments(prRef.Owner, prRef.Repo, prRef.Number)
 		if err != nil {
 			return err
@@ -116,7 +116,7 @@ func runList(cmd *cobra.Command, args []string) error {
 				resolved = "true"
 			}
 			allComments = append(allComments, unifiedComment{
-				Type:      "review",
+				Type:      "review_comment",
 				ID:        c.ID,
 				Author:    c.User.Login,
 				Body:      c.Body,
@@ -130,14 +130,14 @@ func runList(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if listCommentType == "" || listCommentType == "issue" {
+	if listCommentType == "" || listCommentType == "issue_comment" {
 		issueComments, err := client.GetIssueComments(prRef.Owner, prRef.Repo, prRef.Number)
 		if err != nil {
 			return err
 		}
 		for _, c := range issueComments {
 			allComments = append(allComments, unifiedComment{
-				Type:      "issue",
+				Type:      "issue_comment",
 				ID:        c.ID,
 				Author:    c.User.Login,
 				Body:      c.Body,

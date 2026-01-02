@@ -165,7 +165,7 @@ func hideBatch(client *github.Client, prRef *github.PRReference, classifier gith
 			targets = append(targets, hideResult{
 				ID:     c.ID,
 				NodeID: c.NodeID,
-				Type:   "review",
+				Type:   "review_comment",
 				Author: c.User.Login,
 			})
 		}
@@ -176,7 +176,7 @@ func hideBatch(client *github.Client, prRef *github.PRReference, classifier gith
 			targets = append(targets, hideResult{
 				ID:     c.ID,
 				NodeID: c.NodeID,
-				Type:   "issue",
+				Type:   "issue_comment",
 				Author: c.User.Login,
 			})
 		}
@@ -224,7 +224,7 @@ func findCommentNodeID(client *github.Client, prRef *github.PRReference, comment
 
 	for _, c := range reviewComments {
 		if c.ID == commentID {
-			return c.NodeID, "review", c.User.Login, nil
+			return c.NodeID, "review_comment", c.User.Login, nil
 		}
 	}
 
@@ -235,7 +235,7 @@ func findCommentNodeID(client *github.Client, prRef *github.PRReference, comment
 
 	for _, c := range issueComments {
 		if c.ID == commentID {
-			return c.NodeID, "issue", c.User.Login, nil
+			return c.NodeID, "issue_comment", c.User.Login, nil
 		}
 	}
 
