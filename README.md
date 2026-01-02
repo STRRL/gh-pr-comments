@@ -279,6 +279,16 @@ claude plugin marketplace add STRRL/gh-pr-comments
 claude plugin install gh-pr-comments
 ```
 
+### Updating to Latest Version
+
+```bash
+# Update the gh extension
+gh extension install STRRL/gh-pr-comments --force
+
+# Update the Claude Code plugin
+claude plugin marketplace update gh-pr-comments
+```
+
 ### Usage
 
 Use the `/gh-pr-comments:address-comments` slash command to:
