@@ -1,11 +1,16 @@
 {
   "name": "gh-pr-comments",
-  "description": "GitHub PR review comments management plugins",
+  "owner": {
+    "name": "STRRL"
+  },
+  "metadata": {
+    "description": "GitHub PR review comments management plugins"
+  },
   "plugins": [
     {
       "name": "gh-pr-comments",
       "description": "Address GitHub PR review comments with AI assistance",
-      "path": "."
+      "source": "./"
     }
   ]
 }
