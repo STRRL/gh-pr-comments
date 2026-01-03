@@ -2,6 +2,54 @@
 
 A GitHub CLI extension for structured access to Pull Request reviews and review comments.
 
+## Usage
+
+### Claude Code automatically installation
+
+Just copy this instruction to claude code and then use `/gh-pr-comments:address-comments` slash command:
+
+```
+Follow https://github.com/STRRL/gh-pr-comments/blob/master/README.md, install or update to the latest version of:
+
+- gh extension STRRL/gh-pr-comments
+- claude code plugin gh-pr-comments from marketplace STRRL/gh-pr-comments
+
+Then tell user about usage of `/gh-pr-comments:address-comments`
+```
+
+### Manually installation
+
+
+```bash
+# Step 1: Install or upgrade the gh extension
+gh extension install STRRL/gh-pr-comments --force
+
+# Step 2: Add the marketplace
+claude plugin marketplace add STRRL/gh-pr-comments
+
+# Step 3: Install the plugin
+claude plugin install gh-pr-comments
+```
+
+### Updating to Latest Version
+
+```bash
+# Update the gh extension
+gh extension install STRRL/gh-pr-comments --force
+
+# Update the Claude Code plugin
+claude plugin marketplace update gh-pr-comments
+```
+
+Use the `/gh-pr-comments:address-comments` slash command to:
+
+1. List all unresolved PR comments
+2. Get AI analysis and suggested fixes for each comment
+3. Apply fixes with your confirmation
+4. Mark comments as resolved
+
+The plugin also includes a skill that automatically activates when you discuss PR reviews or code review feedback.
+
 ## Problem
 
 The `gh` CLI doesn't provide structured access to PR review comments:
@@ -22,12 +70,6 @@ gh pr comments --outdated      # Can't filter outdated comments
 - **Review Comments** - List inline code comments, optionally filtered by review
 - **Filtering** - Filter by outdated status, resolved status (resolved hidden by default)
 - **Hierarchical View** - See the tree structure of reviews and their comments
-
-## Installation
-
-```bash
-gh extension install STRRL/gh-pr-comments
-```
 
 ## Usage
 
@@ -257,48 +299,6 @@ gh extension install .
 # Run
 gh pr-comments reviews owner/repo/123
 ```
-
-## Claude Code Plugin
-
-This project includes a Claude Code plugin for AI-assisted PR review comment handling.
-
-### Installation
-
-```bash
-# Step 1: Install or upgrade the gh extension
-gh extension install STRRL/gh-pr-comments --force
-```
-
-Then, install the Claude Code plugin:
-
-```bash
-# Step 2: Add the marketplace
-claude plugin marketplace add STRRL/gh-pr-comments
-
-# Step 3: Install the plugin
-claude plugin install gh-pr-comments
-```
-
-### Updating to Latest Version
-
-```bash
-# Update the gh extension
-gh extension install STRRL/gh-pr-comments --force
-
-# Update the Claude Code plugin
-claude plugin marketplace update gh-pr-comments
-```
-
-### Usage
-
-Use the `/gh-pr-comments:address-comments` slash command to:
-
-1. List all unresolved PR comments
-2. Get AI analysis and suggested fixes for each comment
-3. Apply fixes with your confirmation
-4. Mark comments as resolved
-
-The plugin also includes a skill that automatically activates when you discuss PR reviews or code review feedback.
 
 ## License
 
