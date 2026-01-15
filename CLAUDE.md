@@ -49,3 +49,15 @@ This is a GitHub CLI extension (`gh pr-comments`) built with Go and Cobra. It pr
 - Resolved comments are hidden by default in `list` and `tree` commands
 - Use `--all` to show resolved, or `--resolved=true` to show only resolved
 - `--outdated` filters by whether the code has changed since the comment
+
+## AskUserQuestion Tool Usage
+
+**CRITICAL**: When working with PR comments or making changes to the codebase, you MUST use the `AskUserQuestion` tool to get explicit user confirmation before:
+
+- Making code changes based on review feedback
+- Resolving or hiding comments
+- Replying to reviewers
+- Creating issues to track deferred work
+- Any action that modifies files or PR state
+
+**Never assume what the user wants.** Even if a fix seems obvious, always present your analysis and proposed solution, then use `AskUserQuestion` to let the user choose how to proceed. This ensures the user maintains full control over their codebase and PR workflow.

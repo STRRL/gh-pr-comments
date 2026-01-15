@@ -1,11 +1,13 @@
 ---
-allowed-tools: Bash(gh pr-comments:*), Read, Edit, Grep, Glob
+allowed-tools: Bash(gh pr-comments:*), Read, Edit, Grep, Glob, AskUserQuestion
 description: Address unresolved PR review comments by analyzing feedback, fixing code, and marking as resolved
 ---
 
 # Address PR Review Comments
 
 You are helping the user address unresolved review comments on their pull request.
+
+> **CRITICAL**: You MUST use the `AskUserQuestion` tool before taking any action on comments. Never assume what the user wants - always ask for explicit confirmation before making changes, resolving comments, or replying.
 
 ## Workflow
 
@@ -46,10 +48,12 @@ For each file with comments:
    - Your analysis of what changes are needed
    - Your proposed fix (if applicable)
 
-5. **Get confirmation**: Ask the user if they want to:
+5. **Get confirmation (REQUIRED)**: **Use the `AskUserQuestion` tool** to ask the user how to proceed. Present clear options:
    - Apply the suggested fix
    - Skip this comment
    - Handle it differently
+
+   **Never skip this step or assume the user's preference.**
 
 6. **Execute changes**: If confirmed, use the Edit tool to make the changes.
 
@@ -74,8 +78,10 @@ After processing all comments, provide a summary:
 
 ## Important Notes
 
+- **ALWAYS use `AskUserQuestion`** to get user confirmation before any action
 - Always read the file before suggesting changes
 - Consider the context around the commented line, not just the line itself
 - If a comment is asking a question, suggest using `gh pr-comments reply` instead of code changes
 - Be conservative with changes - only modify what the reviewer specifically requested
 - If multiple comments on the same file are related, consider addressing them together
+- Never make autonomous decisions - the user must explicitly approve each action

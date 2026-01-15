@@ -8,6 +8,8 @@ allowed-tools: Bash(gh pr-comments:*), Bash(gh issue create:*), Read, Edit, Grep
 
 This skill helps you work with GitHub PR review comments using the `gh-pr-comments` CLI extension.
 
+> **IMPORTANT**: Always use the `AskUserQuestion` tool to get user confirmation before making any changes or decisions. Never act autonomously on review comments without explicit user approval.
+
 ## Comment Types
 
 There are two types of comments on a PR:
@@ -57,7 +59,7 @@ gh pr-comments cleanup
    - For `review_comment`: These are always actionable code review feedback
    - For `issue_comment`: Check if the content contains review feedback or suggestions that require code changes. Reviewers like Claude Code often post detailed reviews as issue comments.
 3. **Understand**: Use `gh pr-comments view <id>` to see full context including diff (for review_comment) or full message (for issue_comment)
-4. **Ask User**: Use `AskUserQuestion` to let the user choose how to handle each actionable comment:
+4. **Ask User (REQUIRED)**: **You MUST use the `AskUserQuestion` tool** to let the user choose how to handle each actionable comment. Never skip this step or make assumptions:
    - **Fix it now** - Make code changes, reply, and resolve/hide
    - **Fix it later** - Create a GitHub issue to track, reply with link, optionally resolve/hide
    - **No changes needed** - Reply explaining why, then resolve/hide
@@ -107,9 +109,21 @@ gh pr-comments reply <id> --body "No changes needed: <clear explanation>"
 gh pr-comments resolve <id>
 ```
 
+## CRITICAL: Always Use AskUserQuestion
+
+**You MUST use the `AskUserQuestion` tool before taking any action on a comment.** Never assume what the user wants - always ask first.
+
+Use `AskUserQuestion` to:
+- Let the user choose how to handle each comment (fix now, fix later, or no changes needed)
+- Confirm code changes before applying them
+- Validate your understanding of reviewer feedback
+- Get user approval before resolving or hiding comments
+
+**DO NOT** make decisions on behalf of the user. Even if a fix seems obvious, always present it and get explicit confirmation.
+
 ## Best Practices
 
-- Always ask the user before deciding how to handle a comment
+- **ALWAYS use AskUserQuestion** before deciding how to handle a comment
 - Group related comments by file and address them together
 - Read the surrounding code context, not just the commented line
 - If a comment is a question, reply instead of making code changes

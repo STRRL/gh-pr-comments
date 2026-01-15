@@ -45,8 +45,11 @@ Use the `/gh-pr-comments:address-comments` slash command to:
 
 1. List all unresolved PR comments
 2. Get AI analysis and suggested fixes for each comment
-3. Apply fixes with your confirmation
-4. Mark comments as resolved
+3. **Choose how to handle each comment** - The AI will always ask for your decision using `AskUserQuestion` before making any changes
+4. Apply fixes with your confirmation
+5. Mark comments as resolved
+
+**Note**: The plugin always uses `AskUserQuestion` to get your explicit approval before taking any action. You maintain full control over what changes are made and how comments are resolved.
 
 The plugin also includes a skill that automatically activates when you discuss PR reviews or code review feedback.
 
