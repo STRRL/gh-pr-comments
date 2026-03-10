@@ -1,7 +1,7 @@
 ---
 name: address-comments
 description: Help address GitHub PR review comments. Use when the user mentions PR reviews, code review feedback, reviewer comments, or needs to resolve review threads.
-allowed-tools: Bash(gh pr-comments:*), Bash(gh issue create:*), Read, Edit, Grep, Glob, mcp__conductor__AskUserQuestion
+allowed-tools: Bash(gh pr-comments:*), Bash(gh issue create:*), Read, Edit, Grep, Glob, AskUserQuestion, mcp__conductor__AskUserQuestion
 ---
 
 # Addressing PR Review Comments
